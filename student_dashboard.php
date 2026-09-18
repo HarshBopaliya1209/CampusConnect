@@ -6,7 +6,11 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 ?>
-
+<style>
+    body {
+        background: red !important;
+    }
+</style>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -17,7 +21,7 @@ if (!isset($_SESSION['student_id'])) {
 
     <title>CampusConnect | Student Dashboard</title>
 
-        <link rel="stylesheet" href="assets/css/style.css?v=10">
+        <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
@@ -127,12 +131,39 @@ if (!isset($_SESSION['student_id'])) {
 
         <!-- Welcome Card -->
 
-        <div class="welcome-card">
+        <div class="student-welcome">
 
-            <h1>Welcome, <?php echo $_SESSION['name']; ?>👋</h1>
-            <p><strong>Student ID:</strong> <?php echo $_SESSION['student_id']; ?></p>
+            <div class="student-welcome-content">
 
-            <p>Manage notices, applications, library, canteen and payments from one place.</p>
+                <span class="student-welcome-tag">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    Student Portal
+                </span>
+
+                <h2>Welcome, <?php echo $_SESSION['name']; ?> 👋</h2>
+
+                <p>Manage notices, applications, library, canteen and payments from one place.</p>
+
+                <div class="student-welcome-info">
+                    <span>
+                        <i class="fa-solid fa-id-card"></i>
+                        Student ID: <?php echo $_SESSION['student_id']; ?>
+                    </span>
+                    <span>
+                        <i class="fa-solid fa-book-open"></i>
+                        <?php echo $_SESSION['course']; ?>
+                    </span>
+                    <span>
+                        <i class="fa-solid fa-layer-group"></i>
+                        Semester <?php echo $_SESSION['semester']; ?>
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="student-welcome-icon">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
 
         </div>
 

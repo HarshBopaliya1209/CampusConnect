@@ -33,22 +33,11 @@ $faculty_sql = "
     WHERE faculty_id = ?
 ";
 
-
-$faculty_stmt = mysqli_prepare(
-    $conn,
-    $faculty_sql
-);
-
+$faculty_stmt = mysqli_prepare($conn, $faculty_sql);
 
 if (!$faculty_stmt) {
-
-    die(
-        "Database Error: " .
-        mysqli_error($conn)
-    );
-
+    die("Database Error: " . mysqli_error($conn));
 }
-
 
 mysqli_stmt_bind_param(
     $faculty_stmt,
@@ -56,27 +45,13 @@ mysqli_stmt_bind_param(
     $faculty_id
 );
 
+mysqli_stmt_execute($faculty_stmt);
 
-mysqli_stmt_execute(
-    $faculty_stmt
-);
+$faculty_result = mysqli_stmt_get_result($faculty_stmt);
 
+$faculty = mysqli_fetch_assoc($faculty_result);
 
-$faculty_result =
-    mysqli_stmt_get_result(
-        $faculty_stmt
-    );
-
-
-$faculty =
-    mysqli_fetch_assoc(
-        $faculty_result
-    );
-
-
-mysqli_stmt_close(
-    $faculty_stmt
-);
+mysqli_stmt_close($faculty_stmt);
 
 
 /* =========================================================
@@ -98,13 +73,11 @@ if (!$faculty) {
    FACULTY INITIAL
 ========================================================= */
 
-$initial = strtoupper(
-    substr(
-        trim($faculty['name']),
-        0,
-        1
-    )
-);
+$faculty_name = trim($faculty['name'] ?? '');
+
+$initial = $faculty_name !== ''
+    ? strtoupper(substr($faculty_name, 0, 1))
+    : 'F';
 
 
 /* =========================================================
@@ -113,21 +86,15 @@ $initial = strtoupper(
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-
-    $application_id =
-        isset($_POST['application_id'])
-        ? (int)$_POST['application_id']
+    $application_id = isset($_POST['application_id'])
+        ? (int) $_POST['application_id']
         : 0;
 
-
-    $action =
-        isset($_POST['action'])
+    $action = isset($_POST['action'])
         ? $_POST['action']
         : "";
 
-
-    $response =
-        isset($_POST['response'])
+    $response = isset($_POST['response'])
         ? trim($_POST['response'])
         : "";
 
@@ -140,26 +107,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         )
     ) {
 
+        $status = (
+            $action === "approve"
+            ? "Approved"
+            : "Rejected"
+        );
 
-        if ($action === "approve") {
-
-            $status = "Approved";
-
-        } else {
-
-            $status = "Rejected";
-
-        }
-
-
-        /*
-           IMPORTANT:
-
-           The WHERE condition contains faculty_id.
-
-           This means one faculty cannot approve/reject
-           another faculty's application.
-        */
 
         $update_sql = "
             UPDATE applications
@@ -171,7 +124,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 AND faculty_id = ?
         ";
 
-
         $update_stmt = mysqli_prepare(
             $conn,
             $update_sql
@@ -179,7 +131,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
         if ($update_stmt) {
-
 
             mysqli_stmt_bind_param(
                 $update_stmt,
@@ -190,36 +141,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $faculty_id
             );
 
+            mysqli_stmt_execute($update_stmt);
 
-            mysqli_stmt_execute(
-                $update_stmt
-            );
-
-
-            mysqli_stmt_close(
-                $update_stmt
-            );
+            mysqli_stmt_close($update_stmt);
 
         }
 
     }
 
 
-    header(
-        "Location: approve_application.php"
-    );
-
+    header("Location: approve_application.php");
     exit();
 
 }
 
 
 /* =========================================================
-   GET ONLY THIS FACULTY'S APPLICATIONS
+   GET APPLICATIONS
 ========================================================= */
 
 $applications = [];
-
 
 $app_sql = "
     SELECT
@@ -246,22 +187,11 @@ $app_sql = "
     ORDER BY a.application_id DESC
 ";
 
-
-$app_stmt = mysqli_prepare(
-    $conn,
-    $app_sql
-);
-
+$app_stmt = mysqli_prepare($conn, $app_sql);
 
 if (!$app_stmt) {
-
-    die(
-        "Database Error: " .
-        mysqli_error($conn)
-    );
-
+    die("Database Error: " . mysqli_error($conn));
 }
-
 
 mysqli_stmt_bind_param(
     $app_stmt,
@@ -269,81 +199,45 @@ mysqli_stmt_bind_param(
     $faculty_id
 );
 
+mysqli_stmt_execute($app_stmt);
 
-mysqli_stmt_execute(
-    $app_stmt
-);
-
-
-$app_result =
-    mysqli_stmt_get_result(
-        $app_stmt
-    );
+$app_result = mysqli_stmt_get_result($app_stmt);
 
 
-while (
-    $row =
-    mysqli_fetch_assoc(
-        $app_result
-    )
-) {
+while ($row = mysqli_fetch_assoc($app_result)) {
 
     $applications[] = $row;
 
 }
 
-
-mysqli_stmt_close(
-    $app_stmt
-);
+mysqli_stmt_close($app_stmt);
 
 
 /* =========================================================
    STATISTICS
 ========================================================= */
 
-$total_applications =
-    count($applications);
+$total_applications = count($applications);
 
 $pending_applications = 0;
-
 $approved_applications = 0;
-
 $rejected_applications = 0;
 
 
-foreach (
-    $applications as $application
-) {
+foreach ($applications as $application) {
 
+    $status = $application['status'] ?? 'Pending';
 
-    if (
-        $application['status']
-        === "Pending"
-    ) {
-
+    if ($status === "Pending") {
         $pending_applications++;
-
     }
 
-
-    if (
-        $application['status']
-        === "Approved"
-    ) {
-
+    if ($status === "Approved") {
         $approved_applications++;
-
     }
 
-
-    if (
-        $application['status']
-        === "Rejected"
-    ) {
-
+    if ($status === "Rejected") {
         $rejected_applications++;
-
     }
 
 }
@@ -368,6 +262,8 @@ foreach (
     </title>
 
 
+    <!-- GOOGLE FONT -->
+
     <link
         rel="preconnect"
         href="https://fonts.googleapis.com"
@@ -375,7 +271,7 @@ foreach (
 
     <link
         rel="preconnect"
-        href="https://fonts.gstatic.com"
+        href="https://fonts.googleapis.com"
         crossorigin
     >
 
@@ -385,734 +281,720 @@ foreach (
     >
 
 
+    <!-- FONT AWESOME -->
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     >
 
 
-    <link
-        rel="stylesheet"
-        href="assets/css/style.css?v=61"
-    >
 
+<style>
+
+/* =========================================================
+   APPROVE APPLICATIONS PAGE
+   ========================================================= */
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: #212523;
+}
+
+.approve-page {
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 30px 40px 60px;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(27, 189, 136, 0.10), transparent 30%),
+        #212523;
+    color: #d3dbe6;
+    font-family: 'Inter', sans-serif;
+    box-sizing: border-box;
+}
+
+/* Apply box sizing only inside this page */
+.approve-page *,
+.approve-page *::before,
+.approve-page *::after {
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+
+.approve-page .approve-main {
+    width: 100%;
+    max-width: 1250px;
+    min-height: calc(100vh - 60px);
+    margin: 0 auto;
+    padding: 0;
+    background: transparent;
+}
+
+/* =========================================================
+   BACK TO DASHBOARD
+   ========================================================= */
+
+.approve-page .back-dashboard {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 10px 18px;
+    margin-bottom: 25px;
+
+    background: #143d28;
+    color: #9ffce1;
+
+    border: 1px solid #184832;
+    border-radius: 18px;
 
-    <style>
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
 
-        * {
-            box-sizing: border-box;
-        }
+    transition: all 0.2s ease;
+}
 
+.approve-page .back-dashboard:hover {
+    background: #184832;
+    color: #b3fae6;
+    transform: translateY(-2px);
+}
 
-        body {
+/* =========================================================
+   HEADER
+   ========================================================= */
 
-            margin: 0;
+.approve-page .approve-header {
+    width: 100%;
 
-            font-family:
-                'Poppins',
-                sans-serif;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 30px;
+    margin-bottom: 30px;
+}
 
-            background: #f0fdf9;
+.approve-page .approve-heading {
+    min-width: 0;
+}
 
-            color: #1f2937;
+.approve-page .approve-heading h1 {
+    margin: 0 0 6px;
 
-        }
+    font-size: 38px;
+    line-height: 1.2;
+    font-weight: 800;
 
+    color: #c1faeb;
+}
 
-        .approve-page {
+.approve-page .approve-heading p {
+    margin: 0;
 
-            min-height: 100vh;
+    font-size: 14px;
+    color: #999ea9;
+}
 
-            width: 100%;
+/* =========================================================
+   FACULTY PROFILE
+   ========================================================= */
 
-            padding: 30px 40px;
+.approve-page .faculty-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 
-        }
+    padding: 10px 16px;
 
+    background: #17191e;
+    border: 1px solid #23302b;
+    border-radius: 16px;
 
-        /* ==========================================
-           HEADER
-        ========================================== */
+    box-shadow: 0 8px 25px rgba(15, 118, 110, 0.08);
 
-        .approve-header {
+    flex-shrink: 0;
+}
 
-            display: flex;
+.approve-page .faculty-avatar {
+    width: 42px;
+    height: 42px;
 
-            justify-content:
-                space-between;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-            align-items: center;
+    border-radius: 50%;
 
-            margin-bottom: 30px;
+    background: #143d28;
+    color: #9ffce1;
 
-        }
+    font-size: 16px;
+    font-weight: 700;
 
+    flex-shrink: 0;
+}
 
-        .approve-heading h1 {
+.approve-page .faculty-info {
+    min-width: 0;
+}
 
-            margin: 0;
+.approve-page .faculty-info strong {
+    display: block;
 
-            font-size: 28px;
+    font-size: 14px;
+    color: #e0e5f1;
 
-            color: #064e3b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-        }
+.approve-page .faculty-info span {
+    display: block;
 
+    margin-top: 2px;
 
-        .approve-heading p {
+    font-size: 12px;
+    color: #999ea9;
+}
 
-            margin: 5px 0 0;
+/* =========================================================
+   STATISTICS
+========================================================= */
 
-            color: #6b7280;
+.approve-page .stats {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 30px;
+}
 
-            font-size: 13px;
+.approve-page .stat-card {
+    min-width: 0;
 
-        }
+    display: flex;
+    align-items: center;
+    gap: 15px;
 
+    padding: 20px;
 
-        .faculty-profile {
+    background: #17191e;
 
-            display: flex;
+    border: 1px solid #23302b;
+    border-radius: 18px;
 
-            align-items: center;
+    box-shadow: 0 8px 25px rgba(15, 118, 110, 0.08);
 
-            gap: 10px;
+    transition: all 0.25s ease;
+}
 
-            background: white;
+.approve-page .stat-card:hover {
+    transform: translateY(-4px);
 
-            padding: 8px 15px 8px 8px;
+    box-shadow: 0 14px 32px rgba(15, 118, 110, 0.13);
+}
 
-            border-radius: 40px;
+.approve-page .stat-card .icon {
+    width: 48px;
+    height: 48px;
 
-            box-shadow:
-                0 5px 20px rgba(0,0,0,.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-        }
+    flex-shrink: 0;
 
+    border-radius: 14px;
 
-        .faculty-avatar {
+    background: #202422;
+    color: #11d498;
 
-            width: 42px;
+    font-size: 20px;
+}
 
-            height: 42px;
+.approve-page .stat-card h3 {
+    margin: 0;
 
-            border-radius: 50%;
+    font-size: 26px;
+    line-height: 1.1;
+    font-weight: 800;
 
-            display: flex;
+    color: #c1faeb;
+}
 
-            align-items: center;
+.approve-page .stat-card p {
+    margin: 4px 0 0;
 
-            justify-content: center;
+    font-size: 12px;
+    color: #999ea9;
+}
+/* =========================================================
+   APPLICATION LIST
+   ========================================================= */
 
-            background:
-                linear-gradient(
-                    135deg,
-                    #047857,
-                    #14b8a6
-                );
+.approve-page .applications-list {
+    width: 100%;
 
-            color: white;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-            font-weight: 700;
+    gap: 22px;
+}
 
-        }
+/* =========================================================
+   APPLICATION CARD
+   ========================================================= */
 
+.approve-page .application-card {
+    width: 100%;
+    min-width: 0;
 
-        .faculty-profile strong {
+    padding: 24px;
 
-            display: block;
+    background: #17191e;
 
-            font-size: 13px;
+    border: 1px solid #23302b;
+    border-radius: 20px;
 
-        }
+    box-shadow: 0 8px 25px rgba(15, 118, 110, 0.08);
 
+    overflow: hidden;
 
-        .faculty-profile span {
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
 
-            display: block;
+.approve-page .application-card:hover {
+    transform: translateY(-5px);
 
-            font-size: 11px;
+    box-shadow: 0 16px 35px rgba(15, 118, 110, 0.14);
+}
 
-            color: #6b7280;
+/* =========================================================
+   APPLICATION TOP
+   ========================================================= */
 
-        }
+.approve-page .application-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
+    gap: 15px;
 
-        /* ==========================================
-           STATS
-        ========================================== */
+    padding-bottom: 18px;
+    margin-bottom: 18px;
 
-        .approve-stats {
+    border-bottom: 1px solid #1e2220;
+}
 
-            display: grid;
+.approve-page .student-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 
-            grid-template-columns:
-                repeat(3, 1fr);
+    min-width: 0;
+}
 
-            gap: 18px;
+.approve-page .student-avatar {
+    width: 44px;
+    height: 44px;
 
-            margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-        }
+    border-radius: 50%;
 
+    background: #143d28;
+    color: #9ffce1;
 
-        .approve-stat {
+    font-size: 15px;
+    font-weight: 700;
 
-            background: white;
+    flex-shrink: 0;
+}
 
-            padding: 20px;
+.approve-page .student-details {
+    min-width: 0;
+}
 
-            border-radius: 18px;
+.approve-page .student-details h3 {
+    margin: 0;
 
-            box-shadow:
-                0 7px 25px rgba(0,0,0,.05);
+    font-size: 16px;
+    font-weight: 700;
 
-        }
+    color: #e0e5f1;
 
+    overflow-wrap: anywhere;
+}
 
-        .approve-stat-icon {
+.approve-page .student-details p {
+    margin: 3px 0 0;
 
-            width: 43px;
+    font-size: 12px;
+    color: #999ea9;
 
-            height: 43px;
+    overflow-wrap: anywhere;
+}
 
-            border-radius: 12px;
+/* =========================================================
+   STATUS
+   ========================================================= */
 
-            display: flex;
+.approve-page .status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-            align-items: center;
+    padding: 6px 11px;
 
-            justify-content: center;
+    border-radius: 20px;
 
-            background: #d1fae5;
+    font-size: 11px;
+    font-weight: 700;
 
-            color: #047857;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
 
-            margin-bottom: 12px;
+.approve-page .status.pending {
+    background: #3f3615;
+    color: #d45b11;
+}
 
-        }
+.approve-page .status.approved {
+    background: #143d28;
+    color: #9ffce1;
+}
 
+.approve-page .status.rejected {
+    background: #221e1e;
+    color: #e82121;
+}
 
-        .approve-stat h3 {
+/* =========================================================
+   APPLICATION DETAILS
+   ========================================================= */
 
-            margin: 0;
+.approve-page .application-details {
+    width: 100%;
+}
 
-            font-size: 25px;
+.approve-page .detail-row {
+    width: 100%;
 
-            color: #064e3b;
+    display: grid;
+    grid-template-columns: 125px minmax(0, 1fr);
 
-        }
+    gap: 15px;
 
+    margin-bottom: 11px;
 
-        .approve-stat p {
+    align-items: start;
+}
 
-            margin: 4px 0 0;
+.approve-page .detail-label {
+    font-size: 12px;
+    font-weight: 600;
 
-            font-size: 12px;
+    color: #999ea9;
+}
 
-            color: #6b7280;
+.approve-page .detail-value {
+    min-width: 0;
 
-        }
+    font-size: 13px;
+    font-weight: 500;
 
+    color: #d3dbe6;
 
-        /* ==========================================
-           APPLICATION GRID
-        ========================================== */
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 
-        .applications-list {
+/* =========================================================
+   DESCRIPTION
+   ========================================================= */
 
-            display: grid;
+.approve-page .description {
+    width: 100%;
 
-            grid-template-columns:
-                repeat(2, minmax(0, 1fr));
+    margin-top: 15px;
+    padding: 15px;
 
-            gap: 22px;
+    background: #222624;
 
-        }
+    border: 1px solid #1b1f1d;
+    border-radius: 12px;
 
+    font-size: 13px;
+    line-height: 1.6;
 
-        .application-card {
+    color: #4b699b;
 
-            background: white;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 
-            border-radius: 20px;
+/* =========================================================
+   RESPONSE BOX
+   ========================================================= */
 
-            padding: 22px;
+.approve-page .response-box {
+    width: 100%;
 
-            box-shadow:
-                0 7px 30px rgba(0,0,0,.06);
+    margin-top: 15px;
+    padding: 15px;
 
-        }
+    background: #212522;
 
+    border-left: 4px solid #1bbd88;
+    border-radius: 10px;
 
-        /* ==========================================
-           TOP
-        ========================================== */
+    font-size: 13px;
+    line-height: 1.6;
 
-        .application-top {
+    color: #4b699b;
 
-            display: flex;
+    overflow-wrap: anywhere;
+}
 
-            justify-content:
-                space-between;
+/* =========================================================
+   ACTION FORM
+   ========================================================= */
 
-            align-items:
-                flex-start;
+.approve-page .action-form {
+    width: 100%;
 
-            gap: 15px;
+    margin-top: 18px;
+    padding-top: 18px;
 
-            margin-bottom: 18px;
+    border-top: 1px solid #1e2220;
+}
 
-        }
+.approve-page .action-form textarea {
+    width: 100%;
+    min-height: 85px;
 
+    padding: 12px 14px;
 
-        .student-info {
+    border: 1px solid #141516;
+    border-radius: 12px;
 
-            display: flex;
+    background: #17191e;
 
-            align-items: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
 
-            gap: 12px;
+    color: #d3dbe6;
 
-        }
+    resize: vertical;
 
+    outline: none;
 
-        .student-avatar {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
 
-            width: 48px;
+.approve-page .action-form textarea:focus {
+    border-color: #1bbd88;
 
-            height: 48px;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
 
-            border-radius: 14px;
+.approve-page .action-form textarea::placeholder {
+    color: #9ca3af;
+}
 
-            display: flex;
+/* =========================================================
+   BUTTONS
+   ========================================================= */
 
-            align-items: center;
+.approve-page .action-buttons {
+    display: flex;
+    gap: 10px;
 
-            justify-content: center;
+    margin-top: 12px;
+}
 
-            background: #d1fae5;
+.approve-page .btn {
+    min-height: 40px;
 
-            color: #047857;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-            font-weight: 700;
+    padding: 9px 18px;
 
-            font-size: 18px;
+    border: none;
+    border-radius: 10px;
 
-        }
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
 
+    cursor: pointer;
 
-        .student-info h3 {
+    transition: all 0.2s ease;
+}
 
-            margin: 0;
+.approve-page .btn-approve {
+    background: #169c73;
+    color: #ffffff;
+}
 
-            font-size: 16px;
+.approve-page .btn-approve:hover {
+    background: #169c76;
+    transform: translateY(-2px);
+}
 
-        }
+.approve-page .btn-reject {
+    background: #221e1e;
+    color: #e82121;
+}
 
+.approve-page .btn-reject:hover {
+    background: #3e1515;
+    transform: translateY(-2px);
+}
 
-        .student-info p {
+/* =========================================================
+   NO APPLICATIONS
+   ========================================================= */
 
-            margin: 3px 0 0;
+.approve-page .no-applications {
+    width: 100%;
+    max-width: 1250px;
+    margin: 0 auto;
 
-            color: #6b7280;
+    padding: 60px 30px;
 
-            font-size: 11px;
+    text-align: center;
 
-        }
+    background: #17191e;
 
+    border: 1px solid #23302b;
+    border-radius: 20px;
 
-        /* ==========================================
-           STATUS
-        ========================================== */
+    box-shadow: 0 8px 25px rgba(15, 118, 110, 0.08);
+}
 
-        .status {
+.approve-page .no-applications h3 {
+    margin: 0 0 8px;
 
-            padding: 6px 12px;
+    font-size: 20px;
+    color: #c1faeb;
+}
 
-            border-radius: 20px;
+.approve-page .no-applications p {
+    margin: 0;
 
-            font-size: 10px;
+    font-size: 13px;
+    color: #999ea9;
+}
 
-            font-weight: 600;
+/* =========================================================
+   TABLET
+   ========================================================= */
 
-        }
+@media (max-width: 950px) {
 
+    .approve-page {
+        padding: 25px 25px 50px;
+    }
 
-        .status.pending {
+    .approve-page .applications-list {
+        grid-template-columns: 1fr;
+    }
 
-            background: #fef3c7;
+    .approve-page .approve-heading h1 {
+        font-size: 32px;
+    }
+}
 
-            color: #92400e;
+/* =========================================================
+   MOBILE
+   ========================================================= */
 
-        }
+@media (max-width: 700px) {
 
+    .approve-page {
+        padding: 20px 16px 40px;
+    }
 
-        .status.approved {
+    .approve-page .approve-header {
+        flex-direction: column;
+        align-items: flex-start;
 
-            background: #dcfce7;
+        gap: 18px;
+    }
 
-            color: #166534;
+    .approve-page .faculty-profile {
+        width: 100%;
+    }
 
-        }
+    .approve-page .stats {
+    grid-template-columns: 1fr;
+}
 
+    .approve-page .application-card {
+        padding: 18px;
+    }
 
-        .status.rejected {
+    .approve-page .application-top {
+        align-items: flex-start;
+    }
+}
 
-            background: #fee2e2;
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
 
-            color: #991b1b;
+@media (max-width: 500px) {
 
-        }
+    .approve-page {
+        padding: 18px 12px 35px;
+    }
 
+    .approve-page .approve-heading h1 {
+        font-size: 28px;
+    }
 
-        /* ==========================================
-           DETAILS
-        ========================================== */
+    .approve-page .approve-heading p {
+        font-size: 12px;
+    }
 
-        .application-details {
+    .approve-page .application-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-            border-top:
-                1px solid #eef2f7;
+    .approve-page .detail-row {
+        grid-template-columns: 1fr;
+        gap: 3px;
+        margin-bottom: 14px;
+    }
 
-            border-bottom:
-                1px solid #eef2f7;
+    .approve-page .action-buttons {
+        flex-direction: column;
+    }
 
-            padding: 15px 0;
+    .approve-page .btn {
+        width: 100%;
+    }
+}
 
-            margin-bottom: 18px;
-
-        }
-
-
-        .detail-row {
-
-            display: flex;
-
-            margin-bottom: 8px;
-
-            font-size: 12px;
-
-        }
-
-
-        .detail-row:last-child {
-
-            margin-bottom: 0;
-
-        }
-
-
-        .detail-label {
-
-            width: 100px;
-
-            font-weight: 600;
-
-            color: #374151;
-
-        }
-
-
-        .detail-value {
-
-            flex: 1;
-
-            color: #6b7280;
-
-        }
-
-
-        .description {
-
-            background: #f8fafc;
-
-            border-radius: 12px;
-
-            padding: 13px;
-
-            margin-bottom: 18px;
-
-            font-size: 12px;
-
-            line-height: 1.6;
-
-            color: #4b5563;
-
-            white-space: pre-line;
-
-        }
-
-
-        /* ==========================================
-           RESPONSE
-        ========================================== */
-
-        .response-box {
-
-            background: #ecfdf5;
-
-            border-left:
-                4px solid #10b981;
-
-            border-radius: 10px;
-
-            padding: 12px;
-
-            margin-bottom: 18px;
-
-            font-size: 12px;
-
-            line-height: 1.6;
-
-        }
-
-
-        .response-box strong {
-
-            color: #065f46;
-
-        }
-
-
-        /* ==========================================
-           ACTION FORM
-        ========================================== */
-
-        .action-form textarea {
-
-            width: 100%;
-
-            min-height: 80px;
-
-            resize: vertical;
-
-            border:
-                1px solid #d1d5db;
-
-            border-radius: 11px;
-
-            padding: 11px 13px;
-
-            font-family:
-                'Poppins',
-                sans-serif;
-
-            font-size: 12px;
-
-            outline: none;
-
-        }
-
-
-        .action-form textarea:focus {
-
-            border-color: #10b981;
-
-            box-shadow:
-                0 0 0 3px
-                rgba(16,185,129,.10);
-
-        }
-
-
-        .action-buttons {
-
-            display: flex;
-
-            gap: 10px;
-
-            margin-top: 10px;
-
-        }
-
-
-        .btn {
-
-            border: none;
-
-            padding: 10px 16px;
-
-            border-radius: 10px;
-
-            font-family:
-                'Poppins',
-                sans-serif;
-
-            font-size: 12px;
-
-            font-weight: 600;
-
-            cursor: pointer;
-
-        }
-
-
-        .btn-approve {
-
-            background: #047857;
-
-            color: white;
-
-        }
-
-
-        .btn-approve:hover {
-
-            background: #065f46;
-
-        }
-
-
-        .btn-reject {
-
-            background: #fee2e2;
-
-            color: #b91c1c;
-
-        }
-
-
-        .btn-reject:hover {
-
-            background: #fecaca;
-
-        }
-
-
-        /* ==========================================
-           EMPTY
-        ========================================== */
-
-        .no-applications {
-
-            background: white;
-
-            border-radius: 20px;
-
-            padding: 60px 20px;
-
-            text-align: center;
-
-            color: #6b7280;
-
-            box-shadow:
-                0 7px 30px rgba(0,0,0,.05);
-
-        }
-
-
-        .no-applications i {
-
-            font-size: 45px;
-
-            color: #10b981;
-
-            margin-bottom: 15px;
-
-        }
-
-
-        .no-applications h2 {
-
-            margin: 0 0 5px;
-
-            color: #064e3b;
-
-            font-size: 20px;
-
-        }
-
-
-        .no-applications p {
-
-            margin: 0;
-
-            font-size: 12px;
-
-        }
-
-
-        /* ==========================================
-           RESPONSIVE
-        ========================================== */
-
-        @media (max-width: 1000px) {
-
-            .applications-list {
-
-                grid-template-columns: 1fr;
-
-            }
-
-        }
-
-
-        @media (max-width: 750px) {
-
-            .approve-page {
-
-                padding: 20px;
-
-            }
-
-            .approve-stats {
-
-                grid-template-columns: 1fr;
-
-            }
-
-            .approve-header {
-
-                align-items: flex-start;
-
-            }
-
-        }
-
-
-        @media (max-width: 550px) {
-
-            .approve-page {
-
-                padding: 15px;
-
-            }
-
-            .approve-heading h1 {
-
-                font-size: 22px;
-
-            }
-
-            .faculty-profile span {
-
-                display: none;
-
-            }
-
-            .application-top {
-
-                flex-direction: column;
-
-            }
-
-            .action-buttons {
-
-                flex-direction: column;
-
-            }
-
-            .btn {
-
-                width: 100%;
-
-            }
-
-        }
-
-    </style>
-
+</style>
 </head>
 
 
@@ -1122,543 +1004,545 @@ foreach (
 <div class="approve-page">
 
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
-    <header class="approve-header">
+    <main class="approve-main">
 
 
-        <div class="approve-heading">
+        <!-- =================================================
+             BACK TO DASHBOARD
+        ================================================== -->
 
-            <h1>
-                Approve Applications
-            </h1>
+        <a
+            href="faculty_dashboard.php"
+            class="back-dashboard"
+        >
 
-            <p>
+            <i class="fa-solid fa-arrow-left"></i>
 
-                Applications assigned to you
+            <span>
+                Back to Dashboard
+            </span>
 
-            </p>
-
-        </div>
-
-
-        <div class="faculty-profile">
+        </a>
 
 
-            <div class="faculty-avatar">
 
-                <?php
-                echo htmlspecialchars(
-                    $initial
-                );
-                ?>
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <header class="approve-header">
+
+
+            <div class="approve-heading">
+
+                <h1>
+                    Approve Applications
+                </h1>
+
+                <p>
+                    Applications assigned to you
+                </p>
 
             </div>
 
 
-            <div>
+            <!-- FACULTY PROFILE -->
 
-                <strong>
+            <div class="faculty-profile">
+
+
+                <div class="faculty-avatar">
 
                     <?php
-                    echo htmlspecialchars(
-                        $faculty['name']
-                    );
+                    echo htmlspecialchars($initial);
                     ?>
-
-                </strong>
-
-
-                <span>
-
-                    <?php
-                    echo htmlspecialchars(
-                        $faculty['department']
-                    );
-                    ?>
-
-                    •
-
-                    <?php
-                    echo htmlspecialchars(
-                        $faculty['designation']
-                    );
-                    ?>
-
-                </span>
-
-            </div>
-
-
-        </div>
-
-
-    </header>
-
-
-
-    <!-- =====================================================
-         STATISTICS
-    ====================================================== -->
-
-    <section class="approve-stats">
-
-
-        <div class="approve-stat">
-
-            <div class="approve-stat-icon">
-
-                <i class="fa-solid fa-file-lines"></i>
-
-            </div>
-
-            <h3>
-                <?php
-                echo $total_applications;
-                ?>
-            </h3>
-
-            <p>
-                Total Applications
-            </p>
-
-        </div>
-
-
-        <div class="approve-stat">
-
-            <div class="approve-stat-icon">
-
-                <i class="fa-solid fa-clock"></i>
-
-            </div>
-
-            <h3>
-                <?php
-                echo $pending_applications;
-                ?>
-            </h3>
-
-            <p>
-                Pending Applications
-            </p>
-
-        </div>
-
-
-        <div class="approve-stat">
-
-            <div class="approve-stat-icon">
-
-                <i class="fa-solid fa-circle-check"></i>
-
-            </div>
-
-            <h3>
-                <?php
-                echo $approved_applications;
-                ?>
-            </h3>
-
-            <p>
-                Approved Applications
-            </p>
-
-        </div>
-
-
-    </section>
-
-
-
-    <!-- =====================================================
-         APPLICATIONS
-    ====================================================== -->
-
-    <?php if (
-        count($applications) > 0
-    ): ?>
-
-
-        <div class="applications-list">
-
-
-            <?php foreach (
-                $applications
-                as $application
-            ): ?>
-
-
-                <?php
-
-                $student_name =
-                    $application['name']
-                    ?? 'Unknown Student';
-
-
-                $student_initial =
-                    strtoupper(
-                        substr(
-                            trim(
-                                $student_name
-                            ),
-                            0,
-                            1
-                        )
-                    );
-
-
-                $status =
-                    $application['status']
-                    ?? 'Pending';
-
-
-                $status_class =
-                    strtolower($status);
-
-                ?>
-
-
-                <div class="application-card">
-
-
-                    <!-- STUDENT -->
-
-                    <div class="application-top">
-
-
-                        <div class="student-info">
-
-
-                            <div class="student-avatar">
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $student_initial
-                                );
-                                ?>
-
-                            </div>
-
-
-                            <div>
-
-                                <h3>
-
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $student_name
-                                    );
-                                    ?>
-
-                                </h3>
-
-
-                                <p>
-
-                                    Student ID:
-
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $application[
-                                            'student_id'
-                                        ]
-                                    );
-                                    ?>
-
-                                </p>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <span
-                            class="status
-                            <?php
-                            echo htmlspecialchars(
-                                $status_class
-                            );
-                            ?>"
-                        >
-
-                            <?php
-                            echo htmlspecialchars(
-                                $status
-                            );
-                            ?>
-
-                        </span>
-
-
-                    </div>
-
-
-
-                    <!-- DETAILS -->
-
-                    <div class="application-details">
-
-
-                        <div class="detail-row">
-
-                            <div class="detail-label">
-                                Application
-                            </div>
-
-                            <div class="detail-value">
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $application[
-                                        'application_type'
-                                    ]
-                                );
-                                ?>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="detail-row">
-
-                            <div class="detail-label">
-                                Course
-                            </div>
-
-                            <div class="detail-value">
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $application[
-                                        'course'
-                                    ] ?? '-'
-                                );
-                                ?>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="detail-row">
-
-                            <div class="detail-label">
-                                Semester
-                            </div>
-
-                            <div class="detail-value">
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $application[
-                                        'semester'
-                                    ] ?? '-'
-                                );
-                                ?>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="detail-row">
-
-                            <div class="detail-label">
-                                Email
-                            </div>
-
-                            <div class="detail-value">
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $application[
-                                        'email'
-                                    ] ?? '-'
-                                );
-                                ?>
-
-                            </div>
-
-                        </div>
-
-
-                    </div>
-
-
-
-                    <!-- DESCRIPTION -->
-
-                    <div class="description">
-
-                        <?php
-
-                        echo nl2br(
-                            htmlspecialchars(
-                                $application[
-                                    'description'
-                                ]
-                            )
-                        );
-
-                        ?>
-
-                    </div>
-
-
-
-                    <!-- EXISTING RESPONSE -->
-
-                    <?php if (
-                        !empty(
-                            $application[
-                                'response'
-                            ]
-                        )
-                    ): ?>
-
-
-                        <div class="response-box">
-
-
-                            <strong>
-                                Faculty Response:
-                            </strong>
-
-
-                            <br>
-
-
-                            <?php
-
-                            echo nl2br(
-                                htmlspecialchars(
-                                    $application[
-                                        'response'
-                                    ]
-                                )
-                            );
-
-                            ?>
-
-
-                        </div>
-
-
-                    <?php endif; ?>
-
-
-
-                    <!-- ACTION -->
-
-                    <?php if (
-                        $status === "Pending"
-                    ): ?>
-
-
-                        <form
-                            method="POST"
-                            class="action-form"
-                        >
-
-
-                            <input
-                                type="hidden"
-                                name="application_id"
-                                value="<?php
-                                echo (int)
-                                    $application[
-                                        'application_id'
-                                    ];
-                                ?>"
-                            >
-
-
-                            <textarea
-                                name="response"
-                                placeholder="Write a response to the student (optional)..."
-                            ></textarea>
-
-
-                            <div class="action-buttons">
-
-
-                                <button
-                                    type="submit"
-                                    name="action"
-                                    value="approve"
-                                    class="btn btn-approve"
-                                >
-
-                                    <i class="fa-solid fa-check"></i>
-
-                                    Approve
-
-                                </button>
-
-
-                                <button
-                                    type="submit"
-                                    name="action"
-                                    value="reject"
-                                    class="btn btn-reject"
-                                >
-
-                                    <i class="fa-solid fa-xmark"></i>
-
-                                    Reject
-
-                                </button>
-
-
-                            </div>
-
-
-                        </form>
-
-
-                    <?php endif; ?>
-
 
                 </div>
 
 
-            <?php endforeach; ?>
+                <div class="faculty-info">
+
+                    <strong>
+
+                        <?php
+                        echo htmlspecialchars(
+                            $faculty['name']
+                        );
+                        ?>
+
+                    </strong>
 
 
-        </div>
+                    <span>
+
+                        <?php
+                        echo htmlspecialchars(
+                            $faculty['department']
+                        );
+                        ?>
+                        <?php
+                        echo htmlspecialchars(
+                            $faculty['designation']
+                        );
+                        ?>
+
+                    </span>
+
+                </div>
 
 
-    <?php else: ?>
+            </div>
 
 
-        <div class="no-applications">
+        </header>
 
 
-            <i class="fa-solid fa-file-circle-check"></i>
+
+        <!-- =================================================
+             STATISTICS
+        ================================================== -->
+
+        <section class="stats">
 
 
-            <h2>
-                No Applications
-            </h2>
+            <!-- TOTAL -->
+
+            <div class="stat-card">
+
+                <div class="icon">
+
+                    <i class="fa-solid fa-file-lines"></i>
+
+                </div>
+
+                <h3>
+                    <?php
+                    echo $total_applications;
+                    ?>
+                </h3>
+
+                <p>
+                    Total Applications
+                </p>
+
+            </div>
 
 
-            <p>
+            <!-- PENDING -->
 
-                No student applications have
-                been assigned to you yet.
+            <div class="stat-card">
 
-            </p>
+                <div class="icon">
+
+                    <i class="fa-solid fa-clock"></i>
+
+                </div>
+
+                <h3>
+                    <?php
+                    echo $pending_applications;
+                    ?>
+                </h3>
+
+                <p>
+                    Pending Applications
+                </p>
+
+            </div>
 
 
-        </div>
+            <!-- APPROVED -->
+
+            <div class="stat-card">
+
+                <div class="icon">
+
+                    <i class="fa-solid fa-circle-check"></i>
+
+                </div>
+
+                <h3>
+                    <?php
+                    echo $approved_applications;
+                    ?>
+                </h3>
+
+                <p>
+                    Approved Applications
+                </p>
+
+            </div>
 
 
-    <?php endif; ?>
+        </section>
+
+
+
+        <!-- =================================================
+             APPLICATIONS
+        ================================================== -->
+
+        <?php if (count($applications) > 0): ?>
+
+
+            <section class="applications-list">
+
+
+                <?php foreach ($applications as $application): ?>
+
+
+                    <?php
+
+                    $student_name =
+                        $application['name']
+                        ?? 'Unknown Student';
+
+
+                    $student_initial =
+                        $student_name !== ''
+                        ? strtoupper(
+                            substr(
+                                trim($student_name),
+                                0,
+                                1
+                            )
+                        )
+                        : 'S';
+
+
+                    $status =
+                        $application['status']
+                        ?? 'Pending';
+
+
+                    $status_class =
+                        strtolower($status);
+
+                    ?>
+
+
+                    <article class="application-card">
+
+
+                        <!-- APPLICATION TOP -->
+
+                        <div class="application-top">
+
+
+                            <div class="student-info">
+
+
+                                <div class="student-avatar">
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $student_initial
+                                    );
+                                    ?>
+
+                                </div>
+
+
+                                <div>
+
+                                    <h3>
+
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $student_name
+                                        );
+                                        ?>
+
+                                    </h3>
+
+
+                                    <p>
+
+                                        Student ID:
+
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $application['student_id']
+                                        );
+                                        ?>
+
+                                    </p>
+
+                                </div>
+
+
+                            </div>
+
+
+                            <!-- STATUS -->
+
+                            <span
+                                class="status <?php
+                                echo htmlspecialchars(
+                                    $status_class
+                                );
+                                ?>"
+                            >
+
+                                <?php
+                                echo htmlspecialchars(
+                                    $status
+                                );
+                                ?>
+
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- APPLICATION DETAILS -->
+
+                        <div class="application-details">
+
+
+                            <div class="detail-row">
+
+                                <div class="detail-label">
+                                    Application
+                                </div>
+
+                                <div class="detail-value">
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $application[
+                                            'application_type'
+                                        ] ?? '-'
+                                    );
+                                    ?>
+                                </div>
+
+                            </div>
+
+
+                            <div class="detail-row">
+
+                                <div class="detail-label">
+                                    Course
+                                </div>
+
+                                <div class="detail-value">
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $application[
+                                            'course'
+                                        ] ?? '-'
+                                    );
+                                    ?>
+                                </div>
+
+                            </div>
+
+
+                            <div class="detail-row">
+
+                                <div class="detail-label">
+                                    Semester
+                                </div>
+
+                                <div class="detail-value">
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $application[
+                                            'semester'
+                                        ] ?? '-'
+                                    );
+                                    ?>
+                                </div>
+
+                            </div>
+
+
+                            <div class="detail-row">
+
+                                <div class="detail-label">
+                                    Email
+                                </div>
+
+                                <div class="detail-value">
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $application[
+                                            'email'
+                                        ] ?? '-'
+                                    );
+                                    ?>
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- DESCRIPTION -->
+
+                        <?php if (
+                            !empty(
+                                $application['description']
+                            )
+                        ): ?>
+
+                            <div class="description">
+
+                                <?php
+
+                                echo nl2br(
+                                    htmlspecialchars(
+                                        $application[
+                                            'description'
+                                        ]
+                                    )
+                                );
+
+                                ?>
+
+                            </div>
+
+                        <?php endif; ?>
+
+
+
+                        <!-- FACULTY RESPONSE -->
+
+                        <?php if (
+                            !empty(
+                                $application['response']
+                            )
+                        ): ?>
+
+                            <div class="response-box">
+
+                                <strong>
+                                    Faculty Response:
+                                </strong>
+
+                                <br>
+
+                                <?php
+
+                                echo nl2br(
+                                    htmlspecialchars(
+                                        $application[
+                                            'response'
+                                        ]
+                                    )
+                                );
+
+                                ?>
+
+                            </div>
+
+                        <?php endif; ?>
+
+
+
+                        <!-- ACTION FORM -->
+
+                        <?php if ($status === "Pending"): ?>
+
+                            <form
+                                method="POST"
+                                class="action-form"
+                            >
+
+
+                                <input
+                                    type="hidden"
+                                    name="application_id"
+                                    value="<?php
+                                    echo (int)
+                                        $application[
+                                            'application_id'
+                                        ];
+                                    ?>"
+                                >
+
+
+                                <textarea
+                                    name="response"
+                                    placeholder="Write a response to the student (optional)..."
+                                ></textarea>
+
+
+                                <div class="action-buttons">
+
+
+                                    <button
+                                        type="submit"
+                                        name="action"
+                                        value="approve"
+                                        class="btn btn-approve"
+                                    >
+
+                                        <i class="fa-solid fa-check"></i>
+
+                                        Approve
+
+                                    </button>
+
+
+                                    <button
+                                        type="submit"
+                                        name="action"
+                                        value="reject"
+                                        class="btn btn-reject"
+                                    >
+
+                                        <i class="fa-solid fa-xmark"></i>
+
+                                        Reject
+
+                                    </button>
+
+
+                                </div>
+
+
+                            </form>
+
+                        <?php endif; ?>
+
+
+                    </article>
+
+
+                <?php endforeach; ?>
+
+
+            </section>
+
+
+        <?php else: ?>
+
+
+            <section class="no-applications">
+
+                <i class="fa-solid fa-file-circle-check"></i>
+
+                <h2>
+                    No Applications
+                </h2>
+
+                <p>
+                    No student applications have been
+                    assigned to you yet.
+                </p>
+
+            </section>
+
+
+        <?php endif; ?>
+
+
+    </main>
 
 
 </div>
@@ -1667,7 +1551,6 @@ foreach (
 </body>
 
 </html>
-
 
 <?php
 

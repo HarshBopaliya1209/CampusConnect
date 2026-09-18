@@ -25,6 +25,32 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     >
 
+
+<style>
+/* Make the entire Student and Faculty portal cards clickable */
+.portal-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.portal-card-link:hover,
+.portal-card-link:focus,
+.portal-card-link:active {
+    text-decoration: none;
+    color: inherit;
+}
+
+.portal-card-link .portal-card {
+    cursor: pointer;
+}
+
+.portal-enter {
+    display: inline-block;
+}
+</style>
+
 </head>
 
 <body>
@@ -59,35 +85,39 @@ Campus<span>Connect</span>
 
 <div class="portal-container">
 
-<div class="portal-card student">
-    <span class="icon">🎓</span>
+<a href="student_login.php" class="portal-card-link">
+    <div class="portal-card student">
+        <span class="icon">🎓</span>
 
-    <h2>Student Portal</h2>
+        <h2>Student Portal</h2>
 
-    <p>
-        Access notices, applications,
-        library and canteen services.
-    </p>
+        <p>
+            Access notices, applications,
+            library and canteen services.
+        </p>
 
-    <a href="student_login.php">
-        Enter Portal →
-    </a>
-</div>
+        <span class="portal-enter">
+            Enter Portal →
+        </span>
+    </div>
+</a>
 
-<div class="portal-card faculty">
-    <span class="icon">👨‍🏫</span>
+<a href="faculty_login.php" class="portal-card-link">
+    <div class="portal-card faculty">
+        <span class="icon">👨‍🏫</span>
 
-    <h2>Faculty Portal</h2>
+        <h2>Faculty Portal</h2>
 
-    <p>
-        Manage notices and student
-        applications.
-    </p>
+        <p>
+            Manage notices and student
+            applications.
+        </p>
 
-    <a href="faculty_login.php">
-        Enter Portal →
-    </a>
-</div>
+        <span class="portal-enter">
+            Enter Portal →
+        </span>
+    </div>
+</a>
 
 </div>
 

@@ -14,6 +14,26 @@ $is_faculty = isset($_SESSION['faculty_id']);
 
 
 /* ==============================
+   CHECK FOR INVALID MIXED SESSION
+============================== */
+
+if ($is_student && $is_faculty) {
+
+    /*
+       Both sessions should NEVER exist
+       at the same time.
+    */
+
+    session_unset();
+    session_destroy();
+
+    header("Location: index.php");
+    exit();
+
+}
+
+
+/* ==============================
    CHECK LOGIN
 ============================== */
 
@@ -29,7 +49,7 @@ if (!$is_student && !$is_faculty) {
    STUDENT
 ============================== */
 
-if ($is_student && !$is_faculty) {
+if ($is_student) {
 
     $student_id = $_SESSION['student_id'];
 
@@ -60,10 +80,23 @@ if ($is_student && !$is_faculty) {
         $student_result
     );
 
+    if (!$student) {
+
+        session_unset();
+        session_destroy();
+
+        header("Location: student_login.php");
+        exit();
+
+    }
+
     $student_course = $student['course'];
 
 
-    /* STUDENT SEES ONLY THEIR DEPARTMENT + ALL */
+    /* ==============================
+       STUDENT SEES:
+       THEIR COURSE + ALL
+    ============================== */
 
     $sql = "
         SELECT
@@ -113,9 +146,11 @@ if ($is_student && !$is_faculty) {
    FACULTY
 ============================== */
 
-elseif ($is_faculty && !$is_student) {
+else {
 
-    /* FACULTY SEES ALL NOTICES */
+    /* ==============================
+       FACULTY SEES ALL NOTICES
+    ============================== */
 
     $sql = "
         SELECT
@@ -151,28 +186,7 @@ elseif ($is_faculty && !$is_student) {
 
 }
 
-
-/* ==============================
-   INVALID MIXED SESSION
-============================== */
-
-else {
-
-    /*
-       Both student and faculty sessions
-       exist at the same time.
-    */
-
-    session_unset();
-    session_destroy();
-
-    header("Location: index.php");
-    exit();
-
-}
-
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -601,27 +615,27 @@ else {
     </div>
 </div>
 
-    <?php if ($is_faculty) { ?>
+    <?php if ($is_student) { ?>
 
-        <a
-            href="faculty_dashboard.php"
-            class="back-dashboard"
-        >
-            <i class="fa-solid fa-arrow-left"></i>
-            Back to Dashboard
-        </a>
+    <a
+        href="student_dashboard.php"
+        class="back-dashboard"
+    >
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
 
-    <?php } else { ?>
+<?php } else { ?>
 
-        <a
-            href="student_dashboard.php"
-            class="back-dashboard"
-        >
-            <i class="fa-solid fa-arrow-left"></i>
-            Back to Dashboard
-        </a>
+    <a
+        href="faculty_dashboard.php"
+        class="back-dashboard"
+    >
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
 
-    <?php } ?>
+<?php } ?>
 
 </div>
 

@@ -12,6 +12,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password    = $_POST['password'] ?? '';
     $secret_code = trim($_POST['secret_code'] ?? '');
 
+    /* =========================
+       VALIDATION
+    ========================= */
+
     if (
         $faculty_id == "" ||
         $password == "" ||
@@ -21,6 +25,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Please fill in all fields.";
 
     } else {
+
+        /* =========================
+           FIND FACULTY
+        ========================= */
 
         $sql = "
             SELECT
@@ -56,22 +64,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $result = mysqli_stmt_get_result($stmt);
 
 
-            /* Check Faculty */
+            /* =========================
+               CHECK ACCOUNT
+            ========================= */
 
             if (mysqli_num_rows($result) == 1) {
 
                 $faculty = mysqli_fetch_assoc($result);
 
 
-                /* Check Password */
+                /* =========================
+                   CHECK PASSWORD
+                ========================= */
 
                 if ($password === $faculty['password']) {
 
                     /* Clear previous session */
+
                     session_unset();
 
 
-                    /* Create Faculty Session */
+                    /* =========================
+                       CREATE FACULTY SESSION
+                    ========================= */
 
                     $_SESSION['faculty_id'] =
                         $faculty['faculty_id'];
@@ -89,13 +104,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         $faculty['designation'];
 
 
-                    /* Redirect */
+                    /* =========================
+                       LIBRARIAN CHECK
+                    ========================= */
+
+                    if (
+                        strtolower(
+                            trim($faculty['designation'])
+                        ) == "librarian"
+                    ) {
+
+                        header(
+                            "Location: librarian_dashboard.php"
+                        );
+
+                        exit();
+
+                    }
+
+
+                    /* =========================
+                       NORMAL FACULTY
+                    ========================= */
 
                     header(
                         "Location: faculty_dashboard.php"
                     );
 
                     exit();
+
 
                 } else {
 
@@ -119,6 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -130,17 +168,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>CampusConnect | Faculty Login</title>
+    <title>
+        CampusConnect | Faculty Login
+    </title>
+
+
+    <!-- =========================
+         GOOGLE FONT
+    ========================== -->
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
+
+    <!-- =========================
+         FONT AWESOME
+    ========================== -->
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     >
+
+
+    <!-- =========================
+         MAIN CSS
+    ========================== -->
 
     <link
         rel="stylesheet"
@@ -149,15 +204,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 </head>
 
+
 <body>
+
 
 <section class="login-section">
 
+
     <div class="login-container faculty-login">
 
-        <!-- LEFT SIDE -->
+
+        <!-- =========================
+             LEFT SIDE
+        ========================== -->
 
         <div class="login-left">
+
 
             <div class="faculty-icon">
 
@@ -165,40 +227,59 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             </div>
 
+
             <h1>
                 Faculty Portal
             </h1>
 
+
             <p>
+
                 Manage notices, student applications,
                 academic activities and campus services
                 from one secure platform.
+
             </p>
+
 
         </div>
 
 
-        <!-- RIGHT SIDE -->
+
+        <!-- =========================
+             RIGHT SIDE
+        ========================== -->
 
         <div class="login-right">
+
 
             <h2>
                 Faculty Login
             </h2>
+
 
             <p class="subtitle">
                 Login to continue
             </p>
 
 
+
+            <!-- =========================
+                 ERROR MESSAGE
+            ========================== -->
+
             <?php if ($error != "") { ?>
 
                 <div class="login-error">
 
-                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <i
+                        class="fa-solid fa-circle-exclamation"
+                    ></i>
 
                     <?php
+
                     echo htmlspecialchars($error);
+
                     ?>
 
                 </div>
@@ -206,13 +287,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <?php } ?>
 
 
-            <form method="POST">
+
+            <!-- =========================
+                 LOGIN FORM
+            ========================== -->
+
+            <form
+                method="POST"
+                autocomplete="off"
+            >
+
+
+                <!-- Faculty ID -->
 
                 <div class="form-field">
 
                     <label>
                         Faculty ID
                     </label>
+
 
                     <input
                         type="text"
@@ -225,11 +318,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
 
+
+                <!-- Password -->
+
                 <div class="form-field">
 
                     <label>
                         Password
                     </label>
+
 
                     <input
                         type="password"
@@ -242,11 +339,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
 
+
+                <!-- Secret Code -->
+
                 <div class="form-field">
 
                     <label>
                         Secret Code
                     </label>
+
 
                     <input
                         type="text"
@@ -259,16 +360,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
 
-                <button type="submit">
 
-                    <i class="fa-solid fa-right-to-bracket"></i>
+                <!-- Login Button -->
+
+                <button
+                    type="submit"
+                >
+
+                    <i
+                        class="fa-solid fa-right-to-bracket"
+                    ></i>
 
                     Login
 
                 </button>
 
+
             </form>
 
+
+
+            <!-- =========================
+                 REGISTER LINK
+            ========================== -->
 
             <div class="signup">
 
@@ -280,11 +394,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             </div>
 
+
         </div>
 
     </div>
 
 </section>
 
+
 </body>
+
 </html>

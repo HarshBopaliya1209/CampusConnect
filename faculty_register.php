@@ -7,15 +7,21 @@ include("db.php");
 $message = "";
 $message_type = "";
 
+
+/* =========================
+   REGISTRATION
+========================= */
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    $faculty_id  = trim($_POST['faculty_id']);
-    $name        = trim($_POST['name']);
-    $email       = trim($_POST['email']);
-    $department  = trim($_POST['department']);
-    $designation = trim($_POST['designation']);
-    $password    = $_POST['password'];
-    $secret_code = trim($_POST['secret_code']);
+    $faculty_id  = trim($_POST['faculty_id'] ?? '');
+    $name        = trim($_POST['name'] ?? '');
+    $email       = trim($_POST['email'] ?? '');
+    $department  = trim($_POST['department'] ?? '');
+    $designation = trim($_POST['designation'] ?? '');
+    $password    = $_POST['password'] ?? '';
+    $secret_code = trim($_POST['secret_code'] ?? '');
+
 
     /* =========================
        VALIDATION
@@ -41,6 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     } else {
 
+
         /* =========================
            CHECK DUPLICATE FACULTY ID
         ========================= */
@@ -56,85 +63,125 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $check_sql
         );
 
-        mysqli_stmt_bind_param(
-            $check_stmt,
-            "s",
-            $faculty_id
-        );
 
-        mysqli_stmt_execute(
-            $check_stmt
-        );
+        if (!$check_stmt) {
 
-        $check_result = mysqli_stmt_get_result(
-            $check_stmt
-        );
-
-
-        if (mysqli_num_rows($check_result) > 0) {
-
-            $message = "Faculty ID already exists. Please use a different Faculty ID.";
+            $message = "Database error. Please try again.";
             $message_type = "error";
 
         } else {
 
+            mysqli_stmt_bind_param(
+                $check_stmt,
+                "s",
+                $faculty_id
+            );
+
+            mysqli_stmt_execute(
+                $check_stmt
+            );
+
+            $check_result = mysqli_stmt_get_result(
+                $check_stmt
+            );
+
+
             /* =========================
-               INSERT FACULTY
+               DUPLICATE FOUND
             ========================= */
 
-            $insert_sql = "
-                INSERT INTO faculty
-                (
-                    faculty_id,
-                    name,
-                    email,
-                    department,
-                    designation,
-                    password,
-                    secret_code
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ";
+            if (mysqli_num_rows($check_result) > 0) {
 
-            $insert_stmt = mysqli_prepare(
-                $conn,
-                $insert_sql
-            );
+                $message =
+                    "Faculty ID already exists. Please use a different Faculty ID.";
 
-            mysqli_stmt_bind_param(
-                $insert_stmt,
-                "sssssss",
-                $faculty_id,
-                $name,
-                $email,
-                $department,
-                $designation,
-                $password,
-                $secret_code
-            );
-
-
-            if (mysqli_stmt_execute($insert_stmt)) {
-
-                echo "
-                <script>
-                    alert('Faculty Registration Successful!');
-                    window.location='faculty_login.php';
-                </script>
-                ";
-
-                exit();
+                $message_type = "error";
 
             } else {
 
-                $message = "Registration failed. Please try again.";
-                $message_type = "error";
+
+                /* =========================
+                   INSERT FACULTY
+                ========================= */
+
+                $insert_sql = "
+                    INSERT INTO faculty
+                    (
+                        faculty_id,
+                        name,
+                        email,
+                        department,
+                        designation,
+                        password,
+                        secret_code
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ";
+
+
+                $insert_stmt = mysqli_prepare(
+                    $conn,
+                    $insert_sql
+                );
+
+
+                if (!$insert_stmt) {
+
+                    $message =
+                        "Unable to create account. Please try again.";
+
+                    $message_type = "error";
+
+                } else {
+
+                    mysqli_stmt_bind_param(
+                        $insert_stmt,
+                        "sssssss",
+                        $faculty_id,
+                        $name,
+                        $email,
+                        $department,
+                        $designation,
+                        $password,
+                        $secret_code
+                    );
+
+
+                    /* =========================
+                       SAVE ACCOUNT
+                    ========================= */
+
+                    if (mysqli_stmt_execute($insert_stmt)) {
+
+                        echo "
+                        <script>
+                            alert('Faculty Registration Successful!');
+                            window.location='faculty_login.php';
+                        </script>
+                        ";
+
+                        mysqli_stmt_close($insert_stmt);
+                        mysqli_stmt_close($check_stmt);
+                        mysqli_close($conn);
+
+                        exit();
+
+                    } else {
+
+                        $message =
+                            "Registration failed. Please try again.";
+
+                        $message_type = "error";
+                    }
+
+
+                    mysqli_stmt_close($insert_stmt);
+                }
             }
 
-            mysqli_stmt_close($insert_stmt);
-        }
 
-        mysqli_stmt_close($check_stmt);
+            mysqli_stmt_close($check_stmt);
+        }
     }
 }
 
@@ -158,7 +205,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </title>
 
 
-    <!-- Google Font -->
+    <!-- =========================
+         GOOGLE FONT
+    ========================== -->
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
@@ -166,7 +215,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     >
 
 
-    <!-- Font Awesome -->
+    <!-- =========================
+         FONT AWESOME
+    ========================== -->
 
     <link
         rel="stylesheet"
@@ -174,7 +225,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     >
 
 
-    <!-- Main CSS -->
+    <!-- =========================
+         MAIN CSS
+    ========================== -->
 
     <link
         rel="stylesheet"
@@ -213,9 +266,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
             <p>
+
                 Create your CampusConnect faculty account
                 and manage notices, applications and
                 academic activities from one secure platform.
+
             </p>
 
 
@@ -241,12 +296,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-            <!-- MESSAGE -->
+            <!-- =========================
+                 MESSAGE
+            ========================== -->
 
             <?php if ($message != "") { ?>
 
                 <div
-                    class="register-message <?php echo $message_type; ?>"
+                    class="register-message
+                    <?php echo htmlspecialchars($message_type); ?>"
                 >
 
                     <i
@@ -262,7 +320,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <span>
 
                         <?php
-                        echo htmlspecialchars($message);
+
+                        echo htmlspecialchars(
+                            $message
+                        );
+
                         ?>
 
                     </span>
@@ -273,7 +335,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-            <!-- FORM -->
+            <!-- =========================
+                 REGISTRATION FORM
+            ========================== -->
 
             <form
                 method="POST"
@@ -281,7 +345,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             >
 
 
-                <!-- Faculty ID -->
+                <!-- =========================
+                     FACULTY ID
+                ========================== -->
 
                 <div class="form-field">
 
@@ -305,7 +371,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-                <!-- Name -->
+                <!-- =========================
+                     FULL NAME
+                ========================== -->
 
                 <div class="form-field">
 
@@ -329,7 +397,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-                <!-- Email -->
+                <!-- =========================
+                     EMAIL
+                ========================== -->
 
                 <div class="form-field">
 
@@ -353,26 +423,71 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-                <!-- Department -->
+                <!-- =========================
+                     DEPARTMENT
+                ========================== -->
 
                 <div class="form-field">
 
-                    <label>Department</label>
+                    <label>
+                        Department
+                    </label>
 
-                    <select name="department" required>
 
-                        <option value="">Select Department</option>
+                    <select
+                        name="department"
+                        required
+                    >
 
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="BCA">BCA</option>
-                        <option value="BBA">BBA</option>
-                        <option value="B.Com">B.Com</option>
-                        <option value="B.Sc">B.Sc</option>
-                        <option value="MCA">MCA</option>
-                        <option value="M.Com">M.Com</option>
-                        <option value="LLB">LLB</option>
-                        <option value="B.Ed">B.Ed</option>
-                        <option value="Other">Other</option>
+                        <option value="">
+                            Select Department
+                        </option>
+
+                        <option value="Computer Science">
+                            Computer Science
+                        </option>
+
+                        <option value="BCA">
+                            BCA
+                        </option>
+
+                        <option value="BBA">
+                            BBA
+                        </option>
+
+                        <option value="B.Com">
+                            B.Com
+                        </option>
+
+                        <option value="B.Sc">
+                            B.Sc
+                        </option>
+
+                        <option value="MCA">
+                            MCA
+                        </option>
+
+                        <option value="M.Com">
+                            M.Com
+                        </option>
+
+                        <option value="LLB">
+                            LLB
+                        </option>
+
+                        <option value="B.Ed">
+                            B.Ed
+                        </option>
+
+                        <!-- NEW -->
+
+                        <option value="Library">
+                            Library
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
 
                     </select>
 
@@ -380,37 +495,80 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-                <!-- Designation -->
+                <!-- =========================
+                     DESIGNATION
+                ========================== -->
 
-               <div class="form-field">
+                <div class="form-field">
 
-    <label>Designation</label>
-
-    <select name="designation" required>
-
-        <option value="">Select Designation</option>
-
-        <option value="Professor">Professor</option>
-        <option value="Associate Professor">Associate Professor</option>
-        <option value="Assistant Professor">Assistant Professor</option>
-        <option value="Lecturer">Lecturer</option>
-        <option value="HOD">HOD</option>
-        <option value="Dean">Dean</option>
-        <option value="Lab Assistant">Lab Assistant</option>
-        <option value="Visiting Faculty">Visiting Faculty</option>
-
-    </select>
-
-</div>
+                    <label>
+                        Designation
+                    </label>
 
 
-                <!-- Password -->
+                    <select
+                        name="designation"
+                        required
+                    >
+
+                        <option value="">
+                            Select Designation
+                        </option>
+
+                        <option value="Professor">
+                            Professor
+                        </option>
+
+                        <option value="Associate Professor">
+                            Associate Professor
+                        </option>
+
+                        <option value="Assistant Professor">
+                            Assistant Professor
+                        </option>
+
+                        <option value="Lecturer">
+                            Lecturer
+                        </option>
+
+                        <option value="HOD">
+                            HOD
+                        </option>
+
+                        <option value="Dean">
+                            Dean
+                        </option>
+
+                        <option value="Lab Assistant">
+                            Lab Assistant
+                        </option>
+
+                        <option value="Visiting Faculty">
+                            Visiting Faculty
+                        </option>
+
+                        <!-- NEW -->
+
+                        <option value="Librarian">
+                            Librarian
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- =========================
+                     PASSWORD
+                ========================== -->
 
                 <div class="form-field">
 
                     <label>
                         Password
                     </label>
+
 
                     <input
                         type="password"
@@ -424,13 +582,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-                <!-- Secret Code -->
+                <!-- =========================
+                     SECRET CODE
+                ========================== -->
 
                 <div class="form-field">
 
                     <label>
                         Secret Code
                     </label>
+
 
                     <input
                         type="text"
@@ -444,9 +605,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-                <!-- Button -->
+                <!-- =========================
+                     SUBMIT
+                ========================== -->
 
-                <button type="submit">
+                <button
+                    type="submit"
+                >
 
                     <i class="fa-solid fa-user-plus"></i>
 
@@ -459,7 +624,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
-            <!-- Login Link -->
+            <!-- =========================
+                 LOGIN LINK
+            ========================== -->
 
             <div class="signup">
 
@@ -482,6 +649,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </body>
 
 </html>
+
 
 <?php
 

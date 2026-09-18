@@ -37,7 +37,7 @@ if(mysqli_query($conn, $sql))
 {
     echo "<script>
             alert('Registration Successful!');
-            window.location='student_login.php';
+            window.location='student_dashboard.php';
           </script>";
 }
 else

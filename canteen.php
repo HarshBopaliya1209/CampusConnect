@@ -517,7 +517,7 @@ foreach ($_SESSION['canteen_cart'] as $item_id => $quantity) {
 
             <i class="fa-solid fa-arrow-left"></i>
 
-            Dashboard
+            Back to Dashboard
 
         </a>
 
@@ -1146,17 +1146,14 @@ foreach ($_SESSION['canteen_cart'] as $item_id => $quantity) {
             </div>
 
 
-            <button
-                type="button"
+            <a
+                href="payments.php"
                 class="checkout-btn"
-                onclick="checkout()"
+                style="display:block; text-align:center; text-decoration:none;"
             >
-
                 <i class="fa-solid fa-credit-card"></i>
-
                 Proceed to Payment
-
-            </button>
+            </a>
 
 
             <form method="POST">

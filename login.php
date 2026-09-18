@@ -17,20 +17,40 @@ if(isset($_POST['student_id']) && isset($_POST['password']))
     $result = mysqli_query($conn, $sql);
 
     if(mysqli_num_rows($result) == 1)
-    {
+{
+    $row = mysqli_fetch_assoc($result);
 
-        $row = mysqli_fetch_assoc($result);
+    /* =========================
+       CLEAR OLD SESSION
+    ========================= */
 
-        $_SESSION['student_id'] = $row['student_id'];
-        $_SESSION['name']       = $row['name'];
-        $_SESSION['email']      = $row['email'];
-        $_SESSION['course']     = $row['course'];
-        $_SESSION['semester']   = $row['semester'];
+    session_unset();
+    session_destroy();
 
-        header("Location: student_dashboard.php");
-        exit();
+    session_start();
+    session_regenerate_id(true);
 
-    }
+
+    /* =========================
+       CREATE STUDENT SESSION
+    ========================= */
+
+    $_SESSION['role'] = 'student';
+
+    $_SESSION['student_id'] = $row['student_id'];
+    $_SESSION['name'] = $row['name'];
+    $_SESSION['email'] = $row['email'];
+    $_SESSION['course'] = $row['course'];
+    $_SESSION['semester'] = $row['semester'];
+
+
+    /* =========================
+       STUDENT DASHBOARD
+    ========================= */
+
+    header("Location: student_dashboard.php");
+    exit();
+}
     else
     {
 
